@@ -28,25 +28,44 @@ class CrosswordWidget extends ConsumerWidget {
       child: Consumer(
         builder: (context, ref, _) {
           final character = ref.watch(
-            crosswordProvider.select(
-              (crosswordAsync) => crosswordAsync.when(
-                data: (crossword) => crossword.characters[location],
+            workQueueProvider.select(
+              (workQueueAsync) => workQueueAsync.when(
+                data: (workQueue) => workQueue.crossword.characters[location],
                 error: (error, stackTrace) => null,
                 loading: () => null,
               ),
             ),
           );
 
+          final explorationCell = ref.watch(
+            workQueueProvider.select(
+              (workQueueAsync) => workQueueAsync.when(
+                data: (workQueue) =>
+                    workQueue.locationsToTry.keys.contains(location),
+                error: (error, stackTrace) => false,
+                loading: () => false,
+              ),
+            ),
+          );
+
           if (character != null) {
-            return Container(
-              color: Theme.of(context).colorScheme.onPrimary,
+            return AnimatedContainer(
+              duration: Durations.extralong1,
+              curve: Curves.easeInOut,
+              color: explorationCell
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onPrimary,
               child: Center(
-                child: Text(
-                  character.character,
+                child: AnimatedDefaultTextStyle(
+                  duration: Durations.extralong1,
+                  curve: Curves.easeInOut,
                   style: TextStyle(
                     fontSize: 24,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: explorationCell
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.primary,
                   ),
+                  child: Text(character.character),
                 ),
               ),
             );
