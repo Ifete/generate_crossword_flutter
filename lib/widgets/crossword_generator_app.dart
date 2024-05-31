@@ -65,6 +65,15 @@ class _CrosswordGeneratorMenu extends ConsumerWidget {
                   : Icon(Icons.radio_button_unchecked_outlined),
               child: Text(entry.label),
             ),
+          for (final count in BackgroundWorkers.values) // Add from here
+            MenuItemButton(
+              leadingIcon: count == ref.watch(workerCountProvider)
+                  ? Icon(Icons.radio_button_checked_outlined)
+                  : Icon(Icons.radio_button_unchecked_outlined),
+              onPressed: () =>
+                  ref.read(workerCountProvider.notifier).setCount(count),
+              child: Text(count.label), // To here.
+            ),
         ],
         builder: (context, controller, child) => IconButton(
           onPressed: () => controller.open(),

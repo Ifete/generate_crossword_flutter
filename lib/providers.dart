@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import 'isolates.dart'; // Add this import
+import 'isolates.dart';
 import 'model.dart' as model;
 
 part 'providers.g.dart';
@@ -19,7 +19,6 @@ Future<BuiltSet<String>> wordList(WordListRef ref) async {
   // in the range 'a'-'z'. Words containing uppercase letters will be
   // lowercased, and words containing runes outside this range will
   // be removed.
-
   final re = RegExp(r'^[a-z]+$');
   final words = await rootBundle.loadString('assets/words.txt');
   return const LineSplitter().convert(words).toBuiltSet().rebuild((b) => b
@@ -62,7 +61,7 @@ class Size extends _$Size {
 
 @riverpod
 Stream<model.WorkQueue> workQueue(WorkQueueRef ref) async* {
-  // Modify this provider
+  final workers = ref.watch(workerCountProvider);
   final size = ref.watch(sizeProvider);
   final wordListAsync = ref.watch(wordListProvider);
   final emptyCrossword =
@@ -80,6 +79,7 @@ Stream<model.WorkQueue> workQueue(WorkQueueRef ref) async* {
     data: (wordList) => exploreCrosswordSolutions(
       crossword: emptyCrossword,
       wordList: wordList,
+      maxWorkerCount: workers.count,
     ),
     error: (error, stackTrace) async* {
       debugPrint('Error loading word list: $error');
@@ -179,4 +179,34 @@ class DisplayInfo extends _$DisplayInfo {
         error: (error, stackTrace) => model.DisplayInfo.empty,
         loading: () => model.DisplayInfo.empty,
       );
+}
+
+enum BackgroundWorkers {
+  one(1),
+  two(2),
+  four(4),
+  eight(8),
+  sixteen(16),
+  thirtyTwo(32),
+  sixtyFour(64),
+  oneTwentyEight(128);
+
+  const BackgroundWorkers(this.count);
+
+  final int count;
+  String get label => count.toString();
+}
+
+/// A provider that holds the current number of background workers to use.
+@Riverpod(keepAlive: true)
+class WorkerCount extends _$WorkerCount {
+  var _count = BackgroundWorkers.four;
+
+  @override
+  BackgroundWorkers build() => _count;
+
+  void setCount(BackgroundWorkers count) {
+    _count = count;
+    ref.invalidateSelf();
+  }
 }
